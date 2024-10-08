@@ -1,5 +1,7 @@
 import SocketStatus from '@/components/SocketStatus'
 import { RootProvider } from '@/providers'
+import { Header } from '@/ui/header'
+import { MainLayout } from '@/ui/layout'
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
 import './globals.css'
@@ -31,7 +33,8 @@ export default function RootLayout({
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
 				<RootProvider>
-					{children}
+					<Header />
+					<MainLayout>{children}</MainLayout>
 					<SocketStatus />
 				</RootProvider>
 			</body>
