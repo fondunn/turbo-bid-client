@@ -7,6 +7,9 @@ export const GET_PRODUCT_BY_SLUG = gql`
 			start_price
 			start_date
 			end_date
+			description
+			bids
+			current_bid
 		}
 	}
 `
