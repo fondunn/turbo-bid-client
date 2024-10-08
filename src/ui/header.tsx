@@ -1,5 +1,6 @@
 'use client'
 
+import { HEADER_URIS } from '@/config'
 import { Button } from '@/ui/button'
 import { Sheet, SheetContent, SheetTrigger } from '@/ui/sheet'
 import { Menu } from 'lucide-react'
@@ -17,24 +18,15 @@ export const Header = () => {
 					</Link>
 				</div>
 				<nav className='hidden md:flex items-center justify-center space-x-6 text-sm font-medium'>
-					<Link
-						href='/about'
-						className='transition-colors hover:text-foreground/80 text-foreground/60'
-					>
-						About
-					</Link>
-					<Link
-						href='/products'
-						className='transition-colors hover:text-foreground/80 text-foreground/60'
-					>
-						Products
-					</Link>
-					<Link
-						href='/contact'
-						className='transition-colors hover:text-foreground/80 text-foreground/60'
-					>
-						Contact
-					</Link>
+					{HEADER_URIS.map(({ title, uri }) => (
+						<Link
+							key={title}
+							href={uri}
+							className='transition-colors hover:text-foreground/80 text-foreground/60'
+						>
+							{title}
+						</Link>
+					))}
 				</nav>
 				<div className='flex items-center justify-end'>
 					<Button className='hidden md:inline-flex'>Login</Button>
@@ -61,30 +53,15 @@ export const Header = () => {
 function MobileNav() {
 	return (
 		<div className='flex flex-col space-y-3'>
-			<Link
-				href='/'
-				className='text-foreground/60 transition-colors hover:text-foreground/80'
-			>
-				Home
-			</Link>
-			<Link
-				href='/about'
-				className='text-foreground/60 transition-colors hover:text-foreground/80'
-			>
-				About
-			</Link>
-			<Link
-				href='/products'
-				className='text-foreground/60 transition-colors hover:text-foreground/80'
-			>
-				Products
-			</Link>
-			<Link
-				href='/contact'
-				className='text-foreground/60 transition-colors hover:text-foreground/80'
-			>
-				Contact
-			</Link>
+			{HEADER_URIS.map(({ title, uri }) => (
+				<Link
+					key={title}
+					href={uri}
+					className='text-foreground/60 transition-colors hover:text-foreground/80'
+				>
+					{title}
+				</Link>
+			))}
 			<Button>Login</Button>
 		</div>
 	)
