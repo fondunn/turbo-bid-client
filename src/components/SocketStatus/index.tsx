@@ -2,6 +2,7 @@
 import { FC, useEffect, useState } from 'react'
 
 import { io } from 'socket.io-client'
+type Status = 'connected' | 'disconnected' | 'N/A'
 
 const SocketStatus: FC = () => {
 	const [isConnected, setIsConnected] = useState(false)
@@ -34,13 +35,23 @@ const SocketStatus: FC = () => {
 			socket.off('disconnect', onDisconnect)
 		}
 	}, [])
-
+	const status = isConnected ? 'connected' : 'disconnected'
 	return (
-		<div>
-			<p>Status: {isConnected ? 'connected' : 'disconnected'}</p>
-			<p>Transport: {transport}</p>
+		<div className='fixed bottom-4 right-4 flex justify-center items-center gap-2'>
+			<p>status:</p> <Pin status={status} />
 		</div>
 	)
 }
 
 export default SocketStatus
+
+const Pin = ({ status }: { status: Status }) => {
+	switch (status) {
+		case 'connected':
+			return <div className='w-4 h-4 bg-green-500 rounded-full'></div>
+		case 'disconnected':
+			return <div className='w-4 h-4 bg-red-500 rounded-full'></div>
+		default:
+			return <div className='w-4 h-4 bg-gray-500 rounded-full'></div>
+	}
+}
