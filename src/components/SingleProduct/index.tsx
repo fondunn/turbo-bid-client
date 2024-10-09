@@ -41,7 +41,7 @@ export const SingleProduct: React.FC<SingleProductProps> = ({ slug }) => {
 	const [bidAmount, setBidAmount] = useState(0)
 	const [currentBid, setCurrentBid] = useState(undefined)
 	const [bids, setBids] = useState(data?.product?.bids || [])
-
+	const [step, setStep] = useState(undefined)
 	useEffect(() => {
 		const newSocket = io('http://localhost:8881')
 		setSocket(newSocket)
@@ -58,12 +58,14 @@ export const SingleProduct: React.FC<SingleProductProps> = ({ slug }) => {
 				})
 				const bid = initBidInput({ minimal_step, currentBid: current_bid })
 				if (bid) setBidAmount(bid)
+				setStep(minimal_step)
 				setCurrentBid(current_bid)
 				setBids(bids)
 			}
 		)
 		newSocket.on('BID_UPDATED', ({ current_bid, bids }) => {
 			setCurrentBid(current_bid)
+
 			setBids(bids)
 		})
 
@@ -122,7 +124,7 @@ export const SingleProduct: React.FC<SingleProductProps> = ({ slug }) => {
 							)}
 							<div className='flex space-x-2'>
 								<Input
-									step={minimal_step ?? undefined}
+									step={step}
 									min={initialInputValue}
 									value={bidAmount}
 									type='number'
