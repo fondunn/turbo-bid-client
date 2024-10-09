@@ -7,10 +7,28 @@ import { Separator } from '@/ui/separator'
 import { useQuery } from '@apollo/client'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-
+import { io } from 'socket.io-client'
 interface SingleProductProps {
 	slug: string
 }
+interface Image {
+	url: string
+}
+interface SingleProduct {
+	title: string
+	description: string
+	start_price: number
+	start_date: string
+	end_date: string
+	images: Image[]
+	bids: any[]
+	current_bid: number
+	minimal_step: number | null | undefined
+}
+
+import { useEffect, useState } from 'react'
+import { initBidInput } from './utils/initBidInput'
+
 export const SingleProduct: React.FC<SingleProductProps> = ({ slug }) => {
 	if (!slug) notFound()
 	const { data, loading, error } = useQuery(GET_PRODUCT_BY_SLUG, {
@@ -19,17 +37,61 @@ export const SingleProduct: React.FC<SingleProductProps> = ({ slug }) => {
 		},
 	})
 
+	const [socket, setSocket] = useState(null)
+	const [bidAmount, setBidAmount] = useState(0)
+	const [currentBid, setCurrentBid] = useState(undefined)
+	const [bids, setBids] = useState(data?.product?.bids || [])
+
+	useEffect(() => {
+		const newSocket = io('http://localhost:8881')
+		setSocket(newSocket)
+
+		newSocket.emit('JOIN_AUCTION', slug)
+		newSocket.on(
+			'AUCTION_DATA',
+			({ start_price, current_bid, bids, minimal_step }) => {
+				console.log({
+					start_price,
+					current_bid,
+					bids,
+					minimal_step,
+				})
+				const bid = initBidInput({ minimal_step, currentBid: current_bid })
+				if (bid) setBidAmount(bid)
+				setCurrentBid(current_bid)
+				setBids(bids)
+			}
+		)
+		newSocket.on('BID_UPDATED', ({ current_bid, bids }) => {
+			setCurrentBid(current_bid)
+			setBids(bids)
+		})
+
+		return () => {
+			newSocket.disconnect()
+		}
+	}, [slug])
+
+	const handleBid = () => {
+		if (socket) {
+			socket.emit('PLACE_BID', { documentId: slug, newBid: bidAmount })
+		}
+	}
+
 	if (loading) return <div>loading skeleton</div>
 	if (error) return <div>{slug}</div>
+
 	const {
 		title,
 		description,
-		bids,
-		current_bid,
 		start_price,
 		start_date,
 		end_date,
-	} = data.product
+		images,
+		minimal_step,
+	} = data.product as SingleProduct
+
+	const initialInputValue = initBidInput({ minimal_step, currentBid })
 	return (
 		<div className='container mx-auto p-4'>
 			<Card className='w-full mx-auto'>
@@ -39,39 +101,36 @@ export const SingleProduct: React.FC<SingleProductProps> = ({ slug }) => {
 				<CardContent>
 					<div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
 						<div>
-							<Image
-								src='https://images.unsplash.com/photo-1659651933304-5234df40dda3?q=80&w=2187&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D'
-								alt='funko'
-								width={400}
-								height={300}
-								className='rounded-lg object-cover w-full h-auto max-h-96'
-							/>
+							{images &&
+								images.length > 0 &&
+								images.map((image, idx) => (
+									<Image
+										key={idx}
+										src={`http://localhost:1337${image.url}`}
+										alt='funko'
+										width={400}
+										height={300}
+										className='rounded-lg object-cover w-full h-auto max-h-96'
+									/>
+								))}
 						</div>
 						<div className='space-y-4'>
 							<p>{description}</p>
-							<div className='flex justify-between'>
-								<span>Start Price:</span>
-								<span className='font-semibold'>{start_price} uah</span>
-							</div>
-							<div className='flex justify-between'>
-								<span>Current Bid:</span>
-								<span className='font-semibold'>
-									{current_bid ? current_bid : start_price} uah
-								</span>
-							</div>
-							<div className='flex justify-between'>
-								<span>Time Left:</span>
-								<span className='font-semibold'>time left</span>
-							</div>
+							<BidInfoRow title='Start Price:' price={start_price} />
+							{currentBid && (
+								<BidInfoRow title='Current Bid:' price={currentBid} />
+							)}
 							<div className='flex space-x-2'>
 								<Input
+									step={minimal_step ?? undefined}
+									min={initialInputValue}
+									value={bidAmount}
 									type='number'
 									placeholder='Enter bid amount'
-									// value={bidAmount}
-									// onChange={(e) => setBidAmount(e.target.value)}
+									onChange={e => setBidAmount(Number(e.target.value))}
 									className='flex-grow'
 								/>
-								<Button>Place Bid</Button>
+								<Button onClick={handleBid}>Place Bid</Button>
 							</div>
 						</div>
 					</div>
@@ -79,22 +138,17 @@ export const SingleProduct: React.FC<SingleProductProps> = ({ slug }) => {
 					<div>
 						<h3 className='text-lg font-semibold mb-4'>Bid History</h3>
 						<ul className='space-y-4'>
-							{/* {bids.map(bid => (
-								<li key={bid.id} className='flex items-center justify-between'>
-									<div className='flex items-center space-x-2'>
-										<Avatar>
-											<AvatarFallback>{bid.user[0]}</AvatarFallback>
-										</Avatar>
-										<span>{bid.user}</span>
-									</div>
-									<div className='flex items-center space-x-4'>
-										<span className='font-semibold'>${bid.amount}</span>
-										<span className='text-sm text-muted-foreground'>
-											{new Date(bid.time).toLocaleString()}
-										</span>
-									</div>
-								</li>
-							))} */}
+							{bids &&
+								bids.map((bid, idx) => {
+									if (typeof bid === 'string' || typeof bid === 'number') return
+									return (
+										<div key={idx} className='flex gap-2'>
+											<p>user: {bid?.bid_user || '---'}</p>
+											<p>amount: {bid?.bid_value || '---'}</p>
+											<p>date: {bid?.bid_date || '---'}</p>
+										</div>
+									)
+								})}
 						</ul>
 					</div>
 				</CardContent>
@@ -103,6 +157,15 @@ export const SingleProduct: React.FC<SingleProductProps> = ({ slug }) => {
 					<Button variant='outline'>Add to Watchlist</Button>
 				</CardFooter>
 			</Card>
+		</div>
+	)
+}
+
+const BidInfoRow = ({ title, price }: { title: string; price: number }) => {
+	return (
+		<div className='flex justify-between'>
+			<span>{title}</span>
+			<span className='font-semibold'>{price} uah</span>
 		</div>
 	)
 }

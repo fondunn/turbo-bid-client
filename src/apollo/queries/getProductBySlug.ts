@@ -10,6 +10,10 @@ export const GET_PRODUCT_BY_SLUG = gql`
 			description
 			bids
 			current_bid
+			minimal_step
+			images {
+				url
+			}
 		}
 	}
 `
