@@ -6,6 +6,11 @@ export const GET_PRODUCTS = gql`
 			documentId
 			title
 			start_date
+			end_date
+			auction_status
+			images {
+				url
+			}
 		}
 	}
 `

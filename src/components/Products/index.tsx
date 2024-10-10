@@ -7,6 +7,12 @@ import { ProductCard } from '../ProductCard'
 interface IProduct {
 	title: string
 	documentId: string
+	start_date: string
+	end_date: string
+	auction_status: string
+	images: {
+		src: string
+	}[]
 }
 
 interface IProductData {
@@ -20,9 +26,24 @@ const Products: FC = () => {
 	const { products } = data as IProductData
 	return (
 		<div className='grid grid-cols-2 md:grid-cols-4 gap-4'>
-			{products.map(({ title, documentId }, index: number) => {
-				return <ProductCard key={index} title={title} slug={documentId} />
-			})}
+			{products.map(
+				(
+					{ title, documentId, auction_status, start_date, end_date, images },
+					index: number
+				) => {
+					return (
+						<ProductCard
+							key={index}
+							title={title}
+							slug={documentId}
+							auction_status={auction_status}
+							end_date={end_date}
+							start_date={start_date}
+							imageSrc={images[0]?.src || undefined}
+						/>
+					)
+				}
+			)}
 		</div>
 	)
 }
